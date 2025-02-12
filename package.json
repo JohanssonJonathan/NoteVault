@@ -1,0 +1,35 @@
+{
+  "name": "notevault",
+  "version": "1.0.0",
+  "description": "CLI for writing notes efficiently in a secure and easy way.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx ts-node bin/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JohanssonJonathan/NoteVault.git"
+  },
+  "bin": {
+    "mycli": "./bin/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JohanssonJonathan/NoteVault/issues"
+  },
+  "homepage": "https://github.com/JohanssonJonathan/NoteVault#readme",
+  "dependencies": {
+    "@types/yargs": "^17.0.33",
+    "boxen": "^8.0.1",
+    "chalk": "^5.4.1",
+    "inquirer": "^12.4.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "prettier": "^3.5.0"
+  }
+}

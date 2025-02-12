@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ESNext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist",
+    "rootDir": "./bin",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+  },
+  "exclude": ["node_modules"]
+}
