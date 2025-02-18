@@ -94,42 +94,28 @@ inititalQuestion(user)
               rowName: data.rowName,
               question: 3,
               validate: true,
-            });
+            }).then(({ answer, data }) =>
+              inputQuestionLoop({
+                tableName: data.tableName,
+                rowName: data.rowName,
+                items: [answer, ...data.items],
+                question: 4,
+              })
+            );
           }
 
           return editorQuestion({
             tableName: data.tableName,
             rowName: data.rowName,
             question: 3,
-            validate: true,
           });
           // write your note in an editor
-        })
-        .then(({ answer, data }) => {
-          if (data.tableName === value.list) {
-            console.log('Collection name: ', data.rowName);
-            const currentItems = [answer, ...data.items];
-            currentItems.map((item) => console.log(`* ${item}`));
-
-            return inputQuestionLoop({
-              tableName: data.tableName,
-              rowName: data.rowName,
-              items: [answer, ...data.items],
-              question: 4,
-            });
-          }
-        })
-        .then(({ answer, data }) => {
-          if (data.tableName === value.list) {
-            return;
-          }
         })
         .then(({ answer, data }) => {
           console.log('data: ', data);
 
           console.log('answer: ', answer);
         });
-      // .then((answer)=> inputQuestion({tableName: }));
     }
 
     console.log('HEJsan');
