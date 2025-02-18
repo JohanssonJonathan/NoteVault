@@ -1,4 +1,6 @@
-export type TTables = 'list' | 'write';
+import { value } from './utils/consts.ts';
+
+export type TTables = typeof value.list | typeof value.note;
 
 export interface IData<T> {
   data: T;
