@@ -10,23 +10,9 @@ interface IConfirmQuestion {
   items?: string[];
 }
 
-const questions = [
-  () => 'What should the collection be called?',
-  (tableName: TTableName, rowName?: string) =>
-    `Create a title for the ${tableName} inside ${rowName} collection`,
-  () => 'Write your note',
-  () => 'Write your first item',
-  () =>
-    'Write your next item (just press enter without any text to preview the list)',
-];
+const questions = [() => 'Write your note'];
 
-const editorQuestion = async ({
-  tableName,
-  rowName,
-  items = [],
-  question,
-  validate,
-}: IConfirmQuestion) => {
+const editorQuestion = async ({ question, validate }: IConfirmQuestion) => {
   const selectedQuestion = questions[question];
 
   return inquirer
@@ -34,7 +20,7 @@ const editorQuestion = async ({
       {
         type: 'editor',
         name: 'editor',
-        message: selectedQuestion(tableName, rowName?.value),
+        message: selectedQuestion(),
         validate: (value) => {
           if (validate) {
             return Boolean(value.length);
@@ -45,7 +31,7 @@ const editorQuestion = async ({
       },
     ])
     .then((answers) => {
-      return { answer: answers.editor, data: { tableName, rowName, items } };
+      return answers.editor;
     });
 };
 

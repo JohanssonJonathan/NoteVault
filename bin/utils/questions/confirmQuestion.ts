@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { value } from './consts.ts';
+import { value } from '../consts.ts';
 
 type TTableName = typeof value.list | typeof value.note;
 interface IConfirmQuestion {
@@ -21,12 +21,12 @@ const questions = [
   (tableName: TTableName, rowName?: string) =>
     `Are you sure you want to delete ${rowName} in ${tableName}?`,
   () => `Confirm if you want to create. Deny if you want to add more.`,
+  () => `Yes I am done, add it! No if you want to continue adding.`,
 ];
 
 const confirmQuestion = async ({
   tableName,
   rowName,
-  items,
   question,
 }: IConfirmQuestion) => {
   const selectedQuestion = questions[question];
@@ -35,15 +35,12 @@ const confirmQuestion = async ({
     .prompt([
       {
         type: 'confirm',
-        name: 'selections',
+        name: 'confirm',
         message: selectedQuestion(tableName, rowName?.value),
       },
     ])
     .then((answers) => {
-      return {
-        answer: answers.selections,
-        data: { tableName, rowName, items },
-      };
+      return answers.confirm;
     });
 };
 

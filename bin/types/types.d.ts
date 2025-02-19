@@ -1,6 +1,11 @@
-import { value } from './utils/consts.ts';
+import { value } from '../utils/consts.ts';
 
 export type TTables = typeof value.list | typeof value.note;
+
+interface IBaseData {
+  tableName: TTables;
+  rowName: { id: string; value: string };
+}
 
 export interface IData<T> {
   data: T;

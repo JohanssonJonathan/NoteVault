@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { value } from './consts.ts';
+import { value } from '../consts.ts';
 
 type TTableName = typeof value.list | typeof value.note;
 interface IConfirmQuestion {
@@ -18,6 +18,7 @@ const questions = [
   () => 'Write your first item',
   () =>
     'Write your next item (just press enter without any text to preview the list)',
+  () => 'Write a title for your new note',
 ];
 
 export const inputQuestionLoop = async ({
@@ -25,24 +26,24 @@ export const inputQuestionLoop = async ({
   rowName,
   items = [],
   question,
+  validate,
 }: IConfirmQuestion): ReturnType<typeof inputQuestion> => {
   return inputQuestion({
     tableName,
     rowName,
     items,
     question,
+    validate,
   }).then((answer) => {
-    if (answer.answer.length === 0) {
+    if (answer.length === 0) {
       return answer;
     }
 
-    const { answer: currentAnswer, data } = answer;
-
     return inputQuestionLoop({
-      tableName: data.tableName,
-      rowName: data.rowName,
+      tableName,
+      rowName,
       question,
-      items: [currentAnswer, ...items],
+      items: [answer, ...items],
     });
   });
 };
@@ -50,7 +51,6 @@ export const inputQuestionLoop = async ({
 const inputQuestion = async ({
   tableName,
   rowName,
-  items = [],
   question,
   validate,
 }: IConfirmQuestion) => {
@@ -72,7 +72,7 @@ const inputQuestion = async ({
       },
     ])
     .then((answers) => {
-      return { answer: answers.input, data: { tableName, rowName, items } };
+      return answers.input;
     });
 };
 

@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { actions, value } from './consts.ts';
+import { actions, value } from '../consts.ts';
 
 export type TInitialQuestionSelection = {
   value: typeof value.list | typeof value.note;

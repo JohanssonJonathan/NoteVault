@@ -4,7 +4,7 @@ import type {
   ITodoRow,
   INotesRow,
   IAnswerSelection,
-} from '../types.d.ts';
+} from '../../types/types.d.ts';
 
 export const questionInput = async (
   table: IData<ITodoRow[] | INotesRow[]>
