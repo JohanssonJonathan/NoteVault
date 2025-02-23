@@ -5,7 +5,6 @@ export const value = {
 
 export const actions = {
   write: 'write',
-  deleteRow: 'deleteRow',
-  deleteItem: 'deleteItem',
+  delete: 'delete',
   read: 'read',
 } as const;

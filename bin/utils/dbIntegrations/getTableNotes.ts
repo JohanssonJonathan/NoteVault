@@ -1,4 +1,4 @@
-import type { INotesRow } from '../../types.d.ts';
+import type { INoteRow } from '../../types/types.d.ts';
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
 import fs from 'fs';
@@ -6,7 +6,7 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const getTableNotes = (): Promise<INotesRow[]> => {
+const getTableNotes = (): Promise<INoteRow[]> => {
   return new Promise((resolve) => {
     const relativePath = '../../dummyData/notesTablesJson.json';
 

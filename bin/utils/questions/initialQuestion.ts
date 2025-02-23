@@ -16,7 +16,7 @@ const firstChoices = [
     value: { value: null, action: actions.write },
   },
   {
-    name: 'Show me previously created notes or lists.',
+    name: 'Show me my notes/list',
     value: { value: null, action: actions.read },
   },
   {
@@ -57,11 +57,11 @@ const writeChoices = [
 
 const readChoices = [
   {
-    name: 'I want to see previously created lists',
+    name: 'I want to see my lists',
     value: { value: value.list, action: actions.read },
   },
   {
-    name: 'I want to see previously created notes',
+    name: 'I want to see my notes',
     value: { value: value.note, action: actions.read },
   },
 ];

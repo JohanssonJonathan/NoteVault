@@ -7,54 +7,34 @@ interface IBaseData {
   rowName: { id: string; value: string };
 }
 
-export interface IData<T> {
-  data: T;
-  name?: string;
-}
-interface General {
+interface IListItem {
+  id: string;
   created: Date;
+  modified?: Date;
+  items: {
+    id: string;
+    name: string;
+  }[];
 }
 
-interface ITodoList extends General {
-  items: string[];
-}
-
-interface INotesList extends General {
+interface INoteItem {
+  id: string;
+  created: Date;
+  modified?: Date;
   title: string;
   note: string;
 }
 
-export interface ITodoRow extends General {
-  lists: ITodoList[];
-  name: string;
-}
-
-export interface INotesRow extends General {
-  notes: INotesList[];
-  name: string;
-}
-
-type TSelectionAnswer = {
-  selection: string;
-  new?: never;
-  id?: never;
-  name?: string;
-};
-
-type TIdAnswer = {
+interface IRow {
   id: string;
-  selection?: never;
-  new?: never;
-  value?: never;
-  name?: string;
-};
+  name: string;
+  created: Date;
+}
 
-type TNewAnswer = {
-  new: boolean;
-  selection?: never;
-  id?: never;
-  value?: never;
-  name?: string;
-};
+interface IListRow extends IRow {
+  lists: IListItem[];
+}
 
-export type IAnswerSelection = TSelectionAnswer | TIdAnswer | TNewAnswer;
+interface INoteRow extends IRow {
+  notes: INoteItem[];
+}

@@ -1,11 +1,7 @@
 import confirmQuestion from '../questions/confirmQuestion.ts';
-import createHandler from '../handlers/createHandler.ts';
 import { value } from '../consts.ts';
-import inputQuestion, {
-  inputQuestionLoop,
-} from '../questions/inputQuestion.ts';
-import editorQuestion from '../editorQuestion.ts';
-import type { TTables, IBaseData } from '../../types/types.d.ts';
+import inputQuestion from '../questions/inputQuestion.ts';
+import type { TTables } from '../../types/types.d.ts';
 import writeListItemsFlow from './writeListItemsFlow.ts';
 import {
   createHandlerCollection,

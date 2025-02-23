@@ -5,7 +5,7 @@ type TTableName = typeof value.list | typeof value.note;
 interface IConfirmQuestion {
   tableName: TTableName;
   question: number;
-  rowName?: { id?: string; value: string };
+  rowName?: string;
   items?: string[];
 }
 
@@ -22,6 +22,8 @@ const questions = [
     `Are you sure you want to delete ${rowName} in ${tableName}?`,
   () => `Confirm if you want to create. Deny if you want to add more.`,
   () => `Yes I am done, add it! No if you want to continue adding.`,
+  () => `Do you want to edit the content of your list?`,
+  () => `Are you sure you want to delete?`,
 ];
 
 const confirmQuestion = async ({
@@ -36,7 +38,7 @@ const confirmQuestion = async ({
       {
         type: 'confirm',
         name: 'confirm',
-        message: selectedQuestion(tableName, rowName?.value),
+        message: selectedQuestion(tableName, rowName),
       },
     ])
     .then((answers) => {
