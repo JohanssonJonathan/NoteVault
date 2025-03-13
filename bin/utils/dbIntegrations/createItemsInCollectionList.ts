@@ -26,7 +26,8 @@ export interface ICreatedNoteItem {
 
 export const createItemsInCollectionList = (
   rowId: string,
-  items: string[]
+  items: string[],
+  id?: string
 ): Promise<null | ICreatedListItem> => {
   return new Promise((resolve, reject) => {
     const relativePath = '../../dummyData/listTables.json';
@@ -40,20 +41,39 @@ export const createItemsInCollectionList = (
       created: new Date(),
       items: items.map((item) => ({ id: uuidv4(), name: item })),
     };
+
     const updatedList = listTables.map((list) => {
       if (list.id === rowId) {
+        const test = id
+          ? list.lists.map((list) => {
+              if (list.id === id) {
+                return {
+                  ...list,
+                  items: [
+                    ...items.map((item) => ({ id: uuidv4(), name: item })),
+                    ...list.items,
+                  ],
+                };
+              }
+            })
+          : [newItemList, ...list.lists];
         return {
           ...list,
-          lists: [newItemList, ...list.lists],
+          lists: test,
         };
       }
+      return list;
     });
 
+    console.log('updated list: ', updatedList);
     try {
       fs.writeFileSync(
         path.resolve(__dirname, relativePath),
         JSON.stringify(updatedList)
       );
+      if (id) {
+        return resolve(updatedList);
+      }
       resolve(newItemList);
     } catch {
       reject(null);

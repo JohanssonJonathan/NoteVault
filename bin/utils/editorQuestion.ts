@@ -1,26 +1,17 @@
 import inquirer from 'inquirer';
-import { value } from './consts.ts';
 
-type TTableName = typeof value.list | typeof value.note;
 interface IConfirmQuestion {
-  tableName: TTableName;
-  question: number;
+  message: string;
   validate?: boolean;
-  rowName?: { id?: string; value: string };
-  items?: string[];
 }
 
-const questions = [() => 'Write your note'];
-
-const editorQuestion = async ({ question, validate }: IConfirmQuestion) => {
-  const selectedQuestion = questions[question];
-
+const editorQuestion = async ({ message, validate }: IConfirmQuestion) => {
   return inquirer
     .prompt([
       {
         type: 'editor',
         name: 'editor',
-        message: selectedQuestion(),
+        message,
         validate: (value) => {
           if (validate) {
             return Boolean(value.length);

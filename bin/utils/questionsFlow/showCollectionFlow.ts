@@ -1,19 +1,16 @@
-import type { TTables } from '../../types/types.d.ts';
 import questionSelectRow from '../questions/questionSelectRow.ts';
 import { value } from '../consts.ts';
 import type { IListRow, INoteRow } from '../../types/types.d.ts';
-import { updatePreviousAnswers } from '../../index.ts';
+import { updatePreviousAnswers, getPreviousAnswers } from '../../index.ts';
 
-const showCollectionFlow = async (
-  tableName: TTables,
-  data: IListRow[] | INoteRow[]
-) => {
+const showCollectionFlow = async (data: IListRow[] | INoteRow[]) => {
+  const { tableName } = getPreviousAnswers();
   const choices = data.map(({ id, name }) => ({
     name,
     value: { id, value: name },
   }));
 
-  return questionSelectRow({ choices, question: 0 }).then((answer) => {
+  return questionSelectRow('Pick collection', choices).then((answer) => {
     const rowName = {
       id: answer.id,
       value: answer.value,
@@ -26,7 +23,10 @@ const showCollectionFlow = async (
       const listRow = currentRow as IListRow;
 
       console.log('');
-      console.log('These are your lists inside: ', rowName.value);
+      console.log(
+        'These are your lists inside the selected collection: ',
+        rowName.value
+      );
       console.log(`You have ${listRow.lists.length} at the moment`);
       console.log(`............................................`);
       console.log('');
@@ -40,7 +40,10 @@ const showCollectionFlow = async (
       const noteRow = currentRow as INoteRow;
 
       console.log('');
-      console.log('These are your notes inside: ', rowName.value);
+      console.log(
+        'These are your notes inside the selected collection: ',
+        rowName.value
+      );
       console.log(`You have ${noteRow.notes.length} at the moment`);
       console.log(`............................................`);
       console.log('');

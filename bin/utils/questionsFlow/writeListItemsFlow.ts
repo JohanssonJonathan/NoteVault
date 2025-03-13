@@ -1,17 +1,20 @@
 import inputQuestion from '../questions/inputQuestion.ts';
-import type { IBaseData } from '../../types/types.d.ts';
 import confirmQuestion from '../questions/confirmQuestion.ts';
 import { createHandlerItems } from '../handlers/createHandler.ts';
+import { questions } from '../consts.ts';
+import { getPreviousAnswers } from '../../index.ts';
+import { updateListItems } from '../dbIntegrations/update.ts';
+import { updateHandlerListItems } from '../handlers/updateHandler.ts';
 
-interface IWriteListItemFlow extends IBaseData {
+interface IWriteListItemsFlow {
   items?: string[];
+  listId?: string;
 }
 
 const writeListItemsFlow = async ({
-  tableName,
-  rowName,
   items = [],
-}: IWriteListItemFlow): Promise<
+  listId,
+}: IWriteListItemsFlow): Promise<
   | ReturnType<typeof inputQuestion>
   | {
       id: string;
@@ -20,41 +23,41 @@ const writeListItemsFlow = async ({
     }
   | null
 > => {
+  const { tableName, rowName } = getPreviousAnswers();
   return inputQuestion({
-    tableName,
-    rowName,
     items,
-    question: items.length ? 4 : 3,
+    message: questions()[items.length ? 6 : 5],
     validate: items.length === 0,
   }).then(async (answer) => {
     if (answer) {
       return writeListItemsFlow({
-        tableName,
-        rowName,
         items: [answer, ...items],
+        listId,
       });
     }
 
     return confirmQuestion({
-      tableName,
-      rowName,
-      items,
-      question: 6,
+      message: 'Are you done adding items?',
     }).then(async (answer) => {
       if (answer) {
+        if (listId) {
+          return updateHandlerListItems({
+            tableName,
+            rowId: rowName.id,
+            listId,
+            items,
+          });
+        }
         return createHandlerItems({
           items,
           rowName: rowName as { id: string; value: string },
+          id: listId,
         }).then((answer) => {
           return answer;
         });
       }
 
-      return writeListItemsFlow({
-        tableName,
-        rowName,
-        items,
-      });
+      return writeListItemsFlow({ items });
     });
   });
 };

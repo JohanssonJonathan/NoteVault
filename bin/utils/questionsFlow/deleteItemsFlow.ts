@@ -5,9 +5,7 @@ import { deleteHandlerItems } from '../handlers/deleteHandler.ts';
 export const deleteItemsFlow = async () => {
   const { tableName, rowName, list } = getPreviousAnswers();
   return confirmQuestion({
-    tableName,
-    rowName: rowName.value,
-    question: 8,
+    message: 'Are you sure you want to delete?',
   })
     .then((answer) => {
       if (answer) {

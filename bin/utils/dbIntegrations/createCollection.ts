@@ -18,6 +18,7 @@ export const createCollectionInList = (name: string): Promise<ITodoTables> => {
 
     const listTables = JSON.parse(file) as ITodoTables[];
 
+    console.log('listTables: ', listTables);
     const newItem = {
       id: uuidv4(),
       name: name,
@@ -26,6 +27,7 @@ export const createCollectionInList = (name: string): Promise<ITodoTables> => {
     };
     listTables.push(newItem);
 
+    console.log('updated listTables: ', listTables);
     try {
       fs.writeFileSync(
         path.resolve(__dirname, relativePath),

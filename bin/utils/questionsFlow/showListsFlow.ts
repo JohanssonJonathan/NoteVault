@@ -11,13 +11,13 @@ const showListsFlow = async ({ data }: IShowListsFlow) => {
   const currentRow = data.find((value) => value.id === rowName.id);
 
   const listRow = currentRow as IListRow;
-  return questionSelectRow({
-    choices: listRow.lists.map(({ id, created }) => ({
+  return questionSelectRow(
+    'Choose',
+    listRow.lists.map(({ id, created }) => ({
       name: created.toString(),
       value: { id, value: id },
-    })),
-    question: 0,
-  }).then((answer) => {
+    }))
+  ).then((answer) => {
     const currentListItem = listRow.lists.find(({ id }) => id === answer.id);
 
     updatePreviousAnswers({ list: currentListItem });

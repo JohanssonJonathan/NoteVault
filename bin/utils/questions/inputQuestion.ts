@@ -3,11 +3,10 @@ import { value } from '../consts.ts';
 
 type TTableName = typeof value.list | typeof value.note;
 interface IConfirmQuestion {
-  tableName: TTableName;
-  question: number;
+  message: string;
   validate?: boolean;
-  rowName?: { id?: string; value: string };
   items?: string[];
+  value?: string;
 }
 
 const questions = [
@@ -22,17 +21,13 @@ const questions = [
 ];
 
 export const inputQuestionLoop = async ({
-  tableName,
-  rowName,
   items = [],
-  question,
+  message,
   validate,
 }: IConfirmQuestion): ReturnType<typeof inputQuestion> => {
   return inputQuestion({
-    tableName,
-    rowName,
     items,
-    question,
+    message,
     validate,
   }).then((answer) => {
     if (answer.length === 0) {
@@ -40,28 +35,24 @@ export const inputQuestionLoop = async ({
     }
 
     return inputQuestionLoop({
-      tableName,
-      rowName,
-      question,
+      message,
       items: [answer, ...items],
     });
   });
 };
 
 const inputQuestion = async ({
-  tableName,
-  rowName,
-  question,
+  message,
   validate,
+  value,
 }: IConfirmQuestion) => {
-  const selectedQuestion = questions[question];
-
   return inquirer
     .prompt([
       {
         type: 'input',
         name: 'input',
-        message: selectedQuestion(tableName, rowName?.value),
+        default: value || '',
+        message,
         validate: (value) => {
           if (validate) {
             return Boolean(value.length);

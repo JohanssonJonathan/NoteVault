@@ -8,13 +8,20 @@ interface IBaseData {
 }
 
 interface IListItem {
-  id: string;
+  id: number;
+  name: string;
   created: Date;
   modified?: Date;
-  items: {
-    id: string;
-    name: string;
-  }[];
+  link?: string;
+  isDone?: boolean;
+}
+
+interface IList {
+  id: number;
+  name: string;
+  created: Date;
+  modified?: Date;
+  items: null | string;
 }
 
 interface INoteItem {
@@ -31,8 +38,15 @@ interface IRow {
   created: Date;
 }
 
+interface ICollectionRow {
+  id: number;
+  created: number;
+  name: string;
+  lists: null | string;
+}
+
 interface IListRow extends IRow {
-  lists: IListItem[];
+  lists: IList[];
 }
 
 interface INoteRow extends IRow {

@@ -3,10 +3,7 @@ import { value } from '../consts.ts';
 
 type TTableName = typeof value.list | typeof value.note;
 interface IConfirmQuestion {
-  tableName: TTableName;
-  question: number;
-  rowName?: string;
-  items?: string[];
+  message: string;
 }
 
 const questions = [
@@ -26,24 +23,17 @@ const questions = [
   () => `Are you sure you want to delete?`,
 ];
 
-const confirmQuestion = async ({
-  tableName,
-  rowName,
-  question,
-}: IConfirmQuestion) => {
-  const selectedQuestion = questions[question];
-
-  return inquirer
+const confirmQuestion = async ({ message }: IConfirmQuestion) =>
+  inquirer
     .prompt([
       {
         type: 'confirm',
         name: 'confirm',
-        message: selectedQuestion(tableName, rowName),
+        message,
       },
     ])
     .then((answers) => {
       return answers.confirm;
     });
-};
 
 export default confirmQuestion;
