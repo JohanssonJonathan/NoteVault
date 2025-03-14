@@ -1,21 +1,18 @@
-import type { TTables } from '../../types/types.d.ts';
+import type { IList, TTables } from '../../types/types.d.ts';
 import { message, value } from '../consts.ts';
 import {
   deleteCollectionInList,
   deleteCollectionInNotes,
 } from '../dbIntegrations/deleteCollection.ts';
-import {
-  deleteList,
-  deleteNote,
-  deleteListItem,
-} from '../dbIntegrations/deleteItems.ts';
-import { getCollection, getLists } from '../dbIntegrations/getData.ts';
+import { deleteNote, deleteListItem } from '../dbIntegrations/deleteItems.ts';
+import { getCollection, getLists, getList } from '../dbIntegrations/getData.ts';
 import {
   deleteCollection,
-  deleteLists,
   deleteItems,
+  deleteList,
 } from '../dbIntegrations/delete.ts';
 import { captureRejections } from 'events';
+import { updateCollection } from '../dbIntegrations/update.ts';
 
 interface IDeleteHandlerItems {
   tableName: TTables;
@@ -67,6 +64,36 @@ export const deleteHandlerCollection = async ({
     .catch(() => null);
 };
 
+const getListsHelper = (ids: number[]): Promise<IList | false> =>
+  getLists(ids)
+    .then((result) => result)
+    .catch((err) => err);
+
+export const deleteListHandler = async (
+  collectionId: number,
+  listId: number
+) => {
+  const currentCollection = await getCollection(value.list, collectionId);
+
+  if (typeof currentCollection === 'string') {
+    return message[2];
+  }
+
+  if (!currentCollection || !currentCollection.lists) return currentCollection;
+
+  const listContent = await getList(listId).catch((err) => err);
+
+  if (!listContent) return listContent;
+
+  const itemIds = listContent.items ? JSON.parse(listContent.items) : [];
+
+  return deleteList(
+    { id: collectionId, lists: currentCollection.lists },
+    listId,
+    itemIds
+  );
+};
+
 // needs to delete list collection an everything related to it.
 export const deleteListCollectionHandler = async (id: number) => {
   const currentCollection = await getCollection(value.list, id).then(
@@ -84,75 +111,15 @@ export const deleteListCollectionHandler = async (id: number) => {
     return message[2];
   }
 
-  // If the doesnt have any lists its safe to delete it.
-  // Otherwise it needs to delete those first.
-  if (currentCollection.lists === null) {
-    // DELETE IT
-    return deleteCollection(id).then((result) => {
-      if (result === false) {
-        return deleteCollection(id);
-      }
-      return result;
-    });
-  }
+  const listIds: number[] = JSON.parse(currentCollection.lists || '[]');
+  const listsContent = (await getListsHelper(listIds).then(
+    (result) => result || []
+  )) as IList[];
 
-  const lists = JSON.parse(currentCollection.lists);
-  const currentLists = await getLists(lists).then((result) => {
-    if (result === false) return getLists(lists);
-
-    return result;
-  });
-
-  if (currentLists === false) {
-    return currentLists;
-  }
-
-  if (currentLists.length === 0) {
-    return false;
-  }
-
-  const listIds = currentLists.map((list) => list.id);
-  // Now we need to go through all currentLists and see if they have items.
-  // If they have items we need to remove those first, before we remove the list.
-  const itemIds = currentLists
-    .map((list) => {
-      if (list.items) {
-        return JSON.parse(list.items);
-      }
-
-      return false;
-    })
-    .filter((value) => value)
+  const itemIds: number[] = listsContent
+    .map((list: IList) => (list.items ? JSON.parse(list.items) : false))
+    .filter((items) => items)
     .flat();
 
-  // Delete each item first
-  if (itemIds.length) {
-    const deletedItems = await deleteItems(itemIds).then((result) => {
-      if (result === false) {
-        return deleteItems(itemIds);
-      }
-      return result;
-    });
-
-    // could not delete items
-    if (!deletedItems) return deletedItems;
-  }
-
-  if (listIds) {
-    const deletedLists = await deleteLists(listIds).then((result) => {
-      if (result === false) {
-        return deleteLists(listIds);
-      }
-      return result;
-    });
-
-    if (!deletedLists) return deletedLists;
-  }
-
-  return deleteCollection(id).then((result) => {
-    if (result === false) {
-      return deleteCollection(id);
-    }
-    return result;
-  });
+  return deleteCollection(id, listIds, itemIds).catch((err) => err);
 };

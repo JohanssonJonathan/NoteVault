@@ -140,9 +140,10 @@ WHERE id = ${listId};
 export const updateCollection = (
   tableName: string,
   collectionId: number,
-  listId: number
+  listId: number,
+  action: 'add' | 'delete'
 ) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
     const firstSql = `
 SELECT lists
 FROM ${value.list}
@@ -154,14 +155,21 @@ WHERE id = ${collectionId};
 
       let newLists = '';
 
-      if (row?.lists) {
-        const currentList = JSON.parse(row.lists);
-        newLists = JSON.stringify([...currentList, listId]);
+      if (action === 'add') {
+        if (row?.lists) {
+          const currentList = JSON.parse(row.lists);
+          newLists = JSON.stringify([...currentList, listId]);
+        } else {
+          newLists = JSON.stringify([listId]);
+        }
       } else {
-        newLists = JSON.stringify([listId]);
+        // Delete from list
+        const currentList = JSON.parse(row.lists as string);
+        const updatedList = currentList.filter((id: number) => id !== listId);
+
+        newLists = JSON.stringify(updatedList);
       }
 
-      console.log('first row: ', row);
       const updateSql = `
      UPDATE ${tableName}
      SET lists = '${newLists}'
@@ -169,9 +177,8 @@ WHERE id = ${collectionId};
      RETURNING *;
     `;
       db.get(updateSql, [], (err, row) => {
-        if (err) return resolve(false);
+        if (err) return reject(false);
 
-        console.log('update row: ', row);
         resolve(row);
       });
     });

@@ -137,7 +137,7 @@ WHERE id IN (${idsString});
   });
 
 export const getList = (id: number) =>
-  new Promise<IList | false | undefined>((resolve) => {
+  new Promise<IList | false | undefined>((resolve, reject) => {
     const sql = `
 SELECT *
 FROM lists
@@ -145,7 +145,7 @@ WHERE id = ${id};
       `;
 
     db.get(sql, [], (err, row: IList) => {
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       return resolve(row);
     });
@@ -153,19 +153,19 @@ WHERE id = ${id};
 
 // Either get all lists or the lists with the speciefied ids
 export const getLists = (ids?: number[]) =>
-  new Promise<IList[] | false>((resolve) => {
+  new Promise<IList[]>((resolve, reject) => {
     const idsString = ids?.join(',');
 
     const sql = ids?.length
       ? `
 SELECT *
 FROM lists
-WHERE id IN (${idsString});
+WHERE id IN (${idsString})
       `
       : `SELECT * FROM lists`;
 
     db.all(sql, [], (err, row: IList[]) => {
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       return resolve(row);
     });

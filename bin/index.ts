@@ -35,7 +35,10 @@ import {
   createListItemsHandler,
   createTableHandler,
 } from './utils/handlers/createHandler.ts';
-import { deleteListCollectionHandler } from './utils/handlers/deleteHandler.ts';
+import {
+  deleteListCollectionHandler,
+  deleteListHandler,
+} from './utils/handlers/deleteHandler.ts';
 import { getCollections } from './utils/dbIntegrations/getData.ts';
 import { getListsRelatedToListCollection } from './utils/handlers/getHandler.ts';
 import { createListItems } from './utils/dbIntegrations/create.ts';
@@ -62,9 +65,11 @@ export const db = new sqlLite.Database('sqlite.db', (err) => {
 createTableHandler(value.list).then((data) =>
   console.log('created listCollection: ', data)
 );
+
 createTableHandler('lists').then((data) =>
   console.log('created lists: ', data)
 );
+
 createTableHandler('listItems').then((data) =>
   console.log('created listItems: ', data)
 );
@@ -73,43 +78,45 @@ createTableHandler('listItems').then((data) =>
 //   console.log('result: ', result)
 // );
 
-// deleteListCollectionHandler(5).then((result) => console.log('result', result));
+// deleteListCollectionHandler(4).then((result) => console.log('result', result));
+
+// deleteListHandler(4, 9).then((result) => console.log('result: ', result));
 // CREATE COLLECTION
-// createCollectionHandler(value.list, 'first collection').then((result) =>
+// createCollectionHandler(value.list, 'Second coll').then((result) =>
 //   console.log('result: ', result)
 // );
 
 // Create first list
-// createListHandler(5, 'Mina todos').then((result) =>
+// createListHandler(4, 'En annan list').then((result) =>
 //   console.log('result: ', result)
 // );
-
-const items = [
-  {
-    name: 'tredje',
-    created: new Date(),
-    link: 'javascript.se',
-  },
-];
-// // Create first listItems
-// //
-// createListItemsHandler(3, items);
 
 // const items = [
 //   {
-//     name: 'koda',
+//     name: 'tredje',
 //     created: new Date(),
-//     link: 'https://www.google.se',
+//     link: 'javascript.se',
 //   },
-// ];
-//Craete items
-//
-// createListItemsHandler(6, items).then((result) =>
+// ]; // Create first listItems
+// //
+// createListItemsHandler(3, items);
+
+const items = [
+  {
+    name: 'ifran 9',
+    created: new Date(),
+    link: 'https://www.google.se',
+  },
+];
+// Craete items
+// createListItemsHandler(9, items).then((result) =>
 //   console.log('result: ', result)
 // );
+
 const sqlGetListCollection = `SELECT * FROM listCollection;`;
 const sqlGetLists = `SELECT * FROM lists;`;
 const sqlGetListItems = `SELECT * FROM listItems;`;
+
 db.all(sqlGetListCollection, [], (err, row: any) => {
   if (err) return console.log('err: ', err);
 
@@ -121,13 +128,11 @@ db.all(sqlGetLists, [], (err, row: any) => {
 
   console.log('lists', row);
 });
-//
 db.all(sqlGetListItems, [], (err, row: any) => {
   if (err) return console.log('err: ', err);
 
   console.log('listItems: ', row);
 });
-//
 const { USER } = process.env;
 
 const user = USER

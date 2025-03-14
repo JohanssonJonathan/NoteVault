@@ -163,10 +163,10 @@ export const createListHandler = async (
 
   // add the newly listId in the related collection.
   if (list) {
-    return updateCollection(value.list, collectionId, list.id).then(
+    return updateCollection(value.list, collectionId, list.id, 'add').then(
       (result) => {
         if (result === false) {
-          return updateCollection(value.list, collectionId, list.id);
+          return updateCollection(value.list, collectionId, list.id, 'add');
         }
 
         return {
@@ -190,7 +190,7 @@ export const createCollectionHandler = async (
     if (result === false) {
       console.log('Something went wrong with getting the collection');
       // lets try one more time
-      return getCollectionExistence(tableName, collectionName);
+      return getCollectionExistenceByName(tableName, collectionName);
     }
     // doesnt exist
     return result;

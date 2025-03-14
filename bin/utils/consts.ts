@@ -4,6 +4,12 @@ export const value = {
   note: 'note',
 } as const;
 
+export const dbTables = {
+  listCollection: 'listCollection',
+  lists: 'lists',
+  listItems: 'listItems',
+};
+
 export const actions = {
   write: 'write',
   delete: 'delete',
