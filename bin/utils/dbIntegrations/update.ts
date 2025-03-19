@@ -1,119 +1,49 @@
-import type { IList, IListItem, IListRow } from '../../types/types.d.ts';
-import { value } from '../consts.ts';
-import { fileURLToPath } from 'url';
-import path, { dirname } from 'path';
-import fs from 'fs';
+import { dbTables } from '../consts.ts';
 import { db } from '../../index.ts';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import type { ICollectionRow } from '../../types/types.d.ts';
 
-export const updateListItem = ({ rowId, listId, id, value }: any) => {
-  return new Promise<{ listItem?: IListItem; listItems: IListItem[] }>(
-    (resolve, reject) => {
-      const relativePath = '../../dummyData/listTables.json';
-      const file = fs.readFileSync(
-        path.resolve(__dirname, relativePath),
-        'utf8'
-      );
+export const updateCollectionName = (collectionId: number, name: string) =>
+  new Promise((resolve, reject) => {
+    const updateSql = `
+      UPDATE ${dbTables.listCollection}
+      SET name = '${name}'
+      WHERE id = ${collectionId}
+      RETURNING *;
+     `;
 
-      const parsedFile = JSON.parse(file);
+    db.get(updateSql, [], (err, row) => {
+      if (err) return reject(err);
 
-      let listItems: IListItem[] = [];
-      const updatedList = parsedFile.map((row: IListRow) => {
-        if (row.id === rowId) {
-          return {
-            ...row,
-            lists: row.lists.map((list) => {
-              if (list.id === listId) {
-                listItems = list.items.map((item) =>
-                  item.id === id ? { ...item, name: value } : item
-                );
-                return {
-                  ...list,
-                  items: listItems,
-                };
-              }
-
-              return list;
-            }),
-          };
-        }
-
-        return row;
-      });
-
-      try {
-        fs.writeFileSync(
-          path.resolve(__dirname, relativePath),
-          JSON.stringify(updatedList)
-        );
-        resolve({
-          listItems,
-          listItem: listItems.find(({ id: itemId }) => itemId === id),
-        });
-      } catch {
-        reject();
-      }
-    }
-  );
-};
-
-export const updateListItems = ({ rowId, listId, items }: any) => {
-  return new Promise((resolve, reject) => {
-    const relativePath = '../../dummyData/listTables.json';
-    const file = fs.readFileSync(path.resolve(__dirname, relativePath), 'utf8');
-
-    const parsedFile = JSON.parse(file);
-    const currentCollection = parsedFile.find(
-      (row: IListRow) => row.id === rowId
-    );
-
-    const currentList = currentCollection.lists.find(
-      (list: IList) => list.id === listId
-    );
-    const updatedList = parsedFile.map((row: IListRow) => {
-      if (row.id === rowId) {
-        return {
-          ...row,
-          lists: row.lists.map((list) => {
-            if (list.id === listId) {
-              console.log('in db: ', items);
-              return {
-                ...list,
-                items: [...items, ...list.items],
-              };
-            }
-
-            return list;
-          }),
-        };
-      }
-
-      return row;
+      resolve(row);
     });
-
-    try {
-      fs.writeFileSync(
-        path.resolve(__dirname, relativePath),
-        JSON.stringify(updatedList)
-      );
-      resolve(currentList);
-    } catch {
-      reject();
-    }
   });
-};
+
+export const updateListName = (collectionId: number, name: string) =>
+  new Promise((resolve, reject) => {
+    const updateSql = `
+      UPDATE ${dbTables.lists}
+      SET name = '${name}'
+      WHERE id = ${collectionId}
+      RETURNING *;
+     `;
+
+    db.get(updateSql, [], (err, row) => {
+      if (err) return reject(err);
+
+      resolve(row);
+    });
+  });
 
 export const updateList = (listId: number, itemIds: number[]) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
     const firstSql = `
 SELECT items
-FROM lists
+FROM ${dbTables.lists}
 WHERE id = ${listId};
 `;
 
     db.get(firstSql, [], (err, row: { items: null | string }) => {
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       let newItems = '';
 
@@ -125,33 +55,34 @@ WHERE id = ${listId};
       }
 
       const updateSql = `
-     UPDATE lists
+     UPDATE ${dbTables.lists}
      SET items = '${newItems}'
      WHERE id = ${listId}
      RETURNING *;
     `;
       db.get(updateSql, [], (err, row) => {
-        if (err) return resolve(false);
+        if (err) return reject(false);
 
         resolve(row);
       });
     });
   });
+
 export const updateCollection = (
   tableName: string,
   collectionId: number,
   listId: number,
   action: 'add' | 'delete'
 ) =>
-  new Promise((resolve, reject) => {
+  new Promise<ICollectionRow>((resolve, reject) => {
     const firstSql = `
 SELECT lists
-FROM ${value.list}
+FROM ${dbTables.listCollection}
 WHERE id = ${collectionId};
 `;
 
     db.get(firstSql, [], (err, row: { lists: null | string }) => {
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       let newLists = '';
 
@@ -171,12 +102,12 @@ WHERE id = ${collectionId};
       }
 
       const updateSql = `
-     UPDATE ${tableName}
+     UPDATE ${dbTables.listCollection}
      SET lists = '${newLists}'
      WHERE id = ${collectionId}
      RETURNING *;
     `;
-      db.get(updateSql, [], (err, row) => {
+      db.get(updateSql, [], (err, row: ICollectionRow) => {
         if (err) return reject(false);
 
         resolve(row);

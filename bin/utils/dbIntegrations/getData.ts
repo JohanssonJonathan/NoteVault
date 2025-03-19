@@ -5,7 +5,7 @@ import type {
   IListItem,
   IList,
 } from '../../types/types.d.ts';
-import { message } from '../consts.ts';
+import { message, dbTables } from '../consts.ts';
 
 export const getTableExistence = (tableName: string) =>
   new Promise((resolve) => {
@@ -26,32 +26,30 @@ WHERE type = 'table' AND name = '${tableName}';`;
   });
 
 export const getListExcistenceById = (id: number) =>
-  new Promise<string | false>((resolve) => {
-    const sql = `SELECT * FROM lists
+  new Promise<IList>((resolve, reject) => {
+    const sql = `SELECT * FROM ${dbTables.lists}
 WHERE id = '${id}';
     `;
 
     db.get(sql, [], (err, row: IList) => {
-      console.log('err: ', err);
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       if (row) {
-        return resolve(message[1] as string);
+        return resolve(row);
       }
 
-      return resolve(message[2] as string);
+      return reject(false);
     });
   });
 
-export const getCollectionExistenceById = (tableName: TTables, id: number) =>
-  new Promise((resolve) => {
+export const getCollectionExistenceById = (tableName: string, id: number) =>
+  new Promise((resolve, reject) => {
     const sql = `SELECT * FROM ${tableName}
 WHERE id = '${id}';
     `;
 
     db.get(sql, [], (err, row) => {
-      console.log('err: ', err);
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       if (row) {
         return resolve(message[1]);
@@ -60,18 +58,14 @@ WHERE id = '${id}';
       return resolve(message[2]);
     });
   });
-export const getCollectionExistenceByName = (
-  tableName: TTables,
-  name: string
-) =>
-  new Promise((resolve) => {
+export const getCollectionExistenceByName = (tableName: string, name: string) =>
+  new Promise((resolve, reject) => {
     const sql = `SELECT * FROM ${tableName}
 WHERE name = '${name}';
     `;
 
     db.get(sql, [], (err, row) => {
-      console.log('err: ', err);
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       if (row) {
         return resolve(message[1]);
@@ -81,8 +75,8 @@ WHERE name = '${name}';
     });
   });
 
-export const getCollection = (tableName: TTables, id: number) =>
-  new Promise<ICollectionRow | false | string>((resolve) => {
+export const getCollection = (tableName: string, id: number) =>
+  new Promise<ICollectionRow>((resolve, reject) => {
     const sql = `
 SELECT *
 FROM ${tableName}
@@ -90,16 +84,16 @@ WHERE id = ${id};
       `;
 
     db.get(sql, [], (err, row: ICollectionRow) => {
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       if (row) return resolve(row);
 
-      resolve(message[2] as string);
+      reject(message[2]);
     });
   });
 // Get all collections with the specific tableName
 export const getCollections = (tableName: TTables, ids?: number[]) =>
-  new Promise<ICollectionRow[] | false | undefined>((resolve) => {
+  new Promise<ICollectionRow[]>((resolve, reject) => {
     const idsString = ids?.join(',');
 
     const sql = ids?.length
@@ -111,14 +105,15 @@ WHERE id IN (${idsString});
       : `SELECT * FROM ${tableName}`;
 
     db.all(sql, [], (err, row: ICollectionRow[]) => {
-      if (err) return resolve(false);
+      console.log('err: ', err);
+      if (err) return reject(false);
 
       return resolve(row);
     });
   });
 
 export const getListItems = (ids?: number[]) =>
-  new Promise<IListItem[] | false | undefined>((resolve) => {
+  new Promise<IListItem[]>((resolve, reject) => {
     const idsString = ids?.join(',');
 
     const sql = ids?.length
@@ -130,14 +125,14 @@ WHERE id IN (${idsString});
       : `SELECT * FROM listItems`;
 
     db.all(sql, [], (err, row: IListItem[]) => {
-      if (err) return resolve(false);
+      if (err) return reject(false);
 
       return resolve(row);
     });
   });
 
 export const getList = (id: number) =>
-  new Promise<IList | false | undefined>((resolve, reject) => {
+  new Promise<IList>((resolve, reject) => {
     const sql = `
 SELECT *
 FROM lists

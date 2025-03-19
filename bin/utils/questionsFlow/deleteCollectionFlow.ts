@@ -1,5 +1,5 @@
 // import type { TTables } from '../../types/types.d.ts';
-import { deleteHandlerCollection } from '../handlers/deleteHandler.ts';
+// import { deleteHandlerCollection } from '../handlers/deleteHandler.ts';
 import confirmQuestion from '../questions/confirmQuestion.ts';
 // import questionSelectRow from '../questions/questionSelectRow.ts';
 // import { questions } from '../consts.ts';
@@ -12,26 +12,28 @@ import { getPreviousAnswers } from '../../index.ts';
 
 export const deleteCollectionFlow = async () => {
   const { rowName, tableName } = getPreviousAnswers();
-  return confirmQuestion({
-    message: `Are you sure you want to delete ${rowName.value} in ${tableName}?`,
-  })
-    .then((answer) => {
-      if (answer) {
-        return deleteHandlerCollection({
-          tableName,
-          rowId: rowName.id as string,
-        });
-      }
+  return (
+    confirmQuestion({
+      message: `Are you sure you want to delete ${rowName.value} in ${tableName}?`,
     })
-    .then((data) => {
-      if (!data) {
-        console.log('Something went wrong with deleting the collection');
-      } else {
-        console.log(`Deleted ${rowName.value} in ${tableName} successfully!`);
-      }
+      // .then((answer) => {
+      //   if (answer) {
+      //     // return deleteHandlerCollection({
+      //     //   tableName,
+      //     //   rowId: rowName.id as string,
+      //     // });
+      //   }
+      // })
+      .then((data) => {
+        if (!data) {
+          console.log('Something went wrong with deleting the collection');
+        } else {
+          console.log(`Deleted ${rowName.value} in ${tableName} successfully!`);
+        }
 
-      return;
-    });
+        return;
+      })
+  );
 };
 
 // export const deleteListFlow = async ({

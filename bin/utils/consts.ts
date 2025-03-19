@@ -5,6 +5,7 @@ export const value = {
 } as const;
 
 export const dbTables = {
+  noteCollection: 'noteCollection',
   listCollection: 'listCollection',
   lists: 'lists',
   listItems: 'listItems',
@@ -14,6 +15,15 @@ export const actions = {
   write: 'write',
   delete: 'delete',
   read: 'read',
+} as const;
+
+export const arg = {
+  area: 'area',
+  collection: 'collection',
+  note: 'note',
+  list: 'list',
+  listItem: 'listItem',
+  action: 'action',
 } as const;
 
 export const message = [false, 'exist', 'dontexist'];

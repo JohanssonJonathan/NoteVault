@@ -1,5 +1,6 @@
 import { db } from '../../index.ts';
 import { dbTables } from '../consts.ts';
+import { combineQueries } from './dbUtils.ts';
 
 const deleteBySeveralIds = (
   ids: number[],
@@ -40,9 +41,9 @@ const updateParentReference = (
     : 'NULL';
 
   const updateSql = `
-        UPDATE ${table}
-        SET lists = ${newValue}
-        WHERE id = ${id}
+    UPDATE ${table}
+    SET lists = ${newValue}
+    WHERE id = ${id}
     `;
 
   db.run(updateSql, [], callback);
@@ -54,38 +55,37 @@ export const deleteList = (
   itemIds: number[]
 ) =>
   new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
+    combineQueries(
+      () => {
+        // Delete items related to the list id
+        deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
+          if (err) return reject(err);
+        });
 
-      // Delete items related to the list id
-      deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
-        if (err) return reject(err);
-      });
-
-      // Delete the list
-      deleteById(listId, dbTables.lists, (err) => {
-        if (err) return reject(false);
-      });
-
-      // Update the collection
-      const currentList = JSON.parse(collection.lists as string);
-      const updatedList = currentList.filter((id: number) => id !== listId);
-
-      updateParentReference(
-        collection.id,
-        dbTables.listCollection,
-        updatedList,
-        (err) => {
+        // Delete the list
+        deleteById(listId, dbTables.lists, (err) => {
           if (err) return reject(false);
-        }
-      );
+        });
 
-      db.run('COMMIT', (err) => {
+        // Update the collection
+        const currentList = JSON.parse(collection.lists as string);
+        const updatedList = currentList.filter((id: number) => id !== listId);
+
+        updateParentReference(
+          collection.id,
+          dbTables.listCollection,
+          updatedList,
+          (err) => {
+            if (err) return reject(false);
+          }
+        );
+      },
+      (err) => {
         if (err) return reject(false);
 
         resolve(true);
-      });
-    });
+      }
+    );
   });
 
 export const deleteCollection = (
@@ -94,30 +94,29 @@ export const deleteCollection = (
   itemIds: number[]
 ) =>
   new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
+    combineQueries(
+      () => {
+        // Delete items related to the list id
+        deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
+          if (err) return reject(err);
+        });
 
-      // Delete items related to the list id
-      deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
-        if (err) return reject(err);
-      });
+        // Delete lists rows with ids
+        deleteBySeveralIds(listIds, dbTables.lists, (err) => {
+          if (err) return reject(err);
+        });
 
-      // Delete lists rows with ids
-      deleteBySeveralIds(listIds, dbTables.lists, (err) => {
-        if (err) return reject(err);
-      });
-
-      // Delete the collection
-      deleteById(collectionId, dbTables.listCollection, (err) => {
-        if (err) return reject(false);
-      });
-
-      db.run('COMMIT', (err) => {
+        // Delete the collection
+        deleteById(collectionId, dbTables.listCollection, (err) => {
+          if (err) return reject(false);
+        });
+      },
+      (err) => {
         if (err) return reject(false);
 
         resolve(true);
-      });
-    });
+      }
+    );
   });
 
 export const deleteLists = (
@@ -129,91 +128,92 @@ export const deleteLists = (
   itemIds: number[]
 ) =>
   new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
+    combineQueries(
+      () => {
+        // Delete items related to the list id
+        deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
+          if (err) return reject(err);
+        });
 
-      // Delete items related to the list id
-      deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
-        if (err) return reject(err);
-      });
+        // Delete the list
+        deleteBySeveralIds(listIds, dbTables.lists, (err) => {
+          if (err) return reject(err);
+        });
 
-      // Delete the list
-      deleteBySeveralIds(listIds, dbTables.lists, (err) => {
-        if (err) return reject(err);
-      });
+        const currentList = JSON.parse(collection.lists as string);
+        const updatedList = currentList.filter(
+          (id: number) => !listIds.includes(id)
+        );
 
-      const currentList = JSON.parse(collection.lists as string);
-      const updatedList = currentList.filter(
-        (id: number) => !listIds.includes(id)
-      );
-
-      updateParentReference(
-        collection.id,
-        dbTables.listCollection,
-        updatedList,
-        (err) => {
-          if (err) return reject(false);
-        }
-      );
-
-      db.run('COMMIT', (err) => {
+        updateParentReference(
+          collection.id,
+          dbTables.listCollection,
+          updatedList,
+          (err) => {
+            if (err) return reject(false);
+          }
+        );
+      },
+      (err) => {
         if (err) return reject(false);
 
         resolve(true);
-      });
-    });
+      }
+    );
   });
 
 export const deleteItem = (
   list: { id: number; items: string },
-  itemId: number
+  itemToRemove: number
 ) =>
   new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
-      deleteById(itemId, dbTables.listItems, (err) => {
-        if (err) return reject(err);
-      });
+    combineQueries(
+      () => {
+        deleteById(itemToRemove, dbTables.listItems, (err) => {
+          if (err) return reject(err);
+        });
 
-      const currentItems = JSON.parse(list.items as string);
-      const updatedItems = currentItems.filter((id: number) => itemId !== id);
+        const currentItems = JSON.parse(list.items as string);
+        const updatedItems = currentItems.filter(
+          (id: number) => itemToRemove !== id
+        );
 
-      updateParentReference(list.id, dbTables.lists, updatedItems, (err) => {
-        if (err) return reject(false);
-      });
-
-      db.run('COMMIT', (err) => {
+        updateParentReference(list.id, dbTables.lists, updatedItems, (err) => {
+          if (err) return reject(false);
+        });
+      },
+      (err) => {
         if (err) return reject(false);
 
         resolve(true);
-      });
-    });
+      }
+    );
   });
 
 export const deleteItems = (
   list: { id: number; items: string },
-  itemIds: number[]
+  itemsToRemove: number[]
 ) =>
   new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
-      deleteBySeveralIds(itemIds, dbTables.listItems, (err) => {
-        if (err) return reject(err);
-      });
+    combineQueries(
+      () => {
+        deleteBySeveralIds(itemsToRemove, dbTables.listItems, (err) => {
+          if (err) return reject(err);
+        });
 
-      const currentItems = JSON.parse(list.items as string);
-      const updatedItems = currentItems.filter(
-        (id: number) => !itemIds.includes(id)
-      );
+        const currentItems = JSON.parse(list.items as string);
+        const updatedItems = currentItems.filter(
+          (id: number) => !itemsToRemove.includes(id)
+        );
 
-      updateParentReference(list.id, dbTables.lists, updatedItems, (err) => {
-        if (err) return reject(false);
-      });
-
-      db.run('COMMIT', (err) => {
+        updateParentReference(list.id, dbTables.lists, updatedItems, (err) => {
+          if (err) return reject(false);
+        });
+      },
+      (err) => {
         if (err) return reject(false);
 
         resolve(true);
-      });
-    });
+      }
+    );
   });

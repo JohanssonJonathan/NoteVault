@@ -1,6 +1,8 @@
-import { value } from '../utils/consts.ts';
+import { value, dbTables } from '../utils/consts.ts';
 
-export type TTables = typeof value.list | typeof value.note;
+export type TTables =
+  | typeof dbTables.listCollection
+  | typeof dbTables.noteCollection;
 
 interface IBaseData {
   tableName: TTables;
@@ -10,8 +12,8 @@ interface IBaseData {
 interface IListItem {
   id: number;
   name: string;
-  created: Date;
-  modified?: Date;
+  created: number;
+  modified?: number;
   link?: string;
   isDone?: boolean;
 }

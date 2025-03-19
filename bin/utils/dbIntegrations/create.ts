@@ -15,10 +15,10 @@ export const createTable = (query: string) =>
   });
 
 export const createCollection = (
-  tableName: TTables,
+  tableName: string,
   values: { name: string; created: Date }
 ) =>
-  new Promise<ICollectionRow | false>((resolve) => {
+  new Promise<ICollectionRow | false>((resolve, reject) => {
     const { name, created } = values;
     const sql = `
 INSERT INTO ${tableName} (name, created, lists) 
@@ -27,14 +27,14 @@ RETURNING *;
     `;
 
     return db.get(sql, [name, created, null], (err, row: ICollectionRow) => {
-      if (err) resolve(false);
+      if (err) reject(false);
 
       return resolve(row);
     });
   });
 
 export const createList = (values: { name: string; created: Date }) =>
-  new Promise<IList | false>((resolve) => {
+  new Promise<IList | false>((resolve, reject) => {
     const { name, created } = values;
     const sql = `
 INSERT INTO lists (name, created, items) 
@@ -44,8 +44,7 @@ RETURNING *;
 
     return db.get(sql, [name, created, null], (err, row: IList) => {
       if (err) {
-        console.log('err: ', err);
-        return resolve(false);
+        return reject(false);
       }
 
       resolve(row);
@@ -61,7 +60,7 @@ RETURNING *;
 //   isDone?: boolean;
 // }
 export const createListItems = (items: Omit<IListItem, 'id'>[]) =>
-  new Promise<IListItem[] | false>((resolve) => {
+  new Promise<IListItem[] | false>((resolve, reject) => {
     const currentValues = items
       .map((item) => {
         const link = item.link ? `"${item.link}"` : null;
@@ -81,7 +80,7 @@ export const createListItems = (items: Omit<IListItem, 'id'>[]) =>
 
     db.all(sql, [], (err, value: IListItem[]) => {
       if (err) {
-        return resolve(false);
+        return reject(false);
       }
 
       resolve(value);

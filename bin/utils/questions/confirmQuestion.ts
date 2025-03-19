@@ -23,7 +23,7 @@ const questions = [
   () => `Are you sure you want to delete?`,
 ];
 
-const confirmQuestion = async ({ message }: IConfirmQuestion) =>
+const confirmQuestion = async (message: string) =>
   inquirer
     .prompt([
       {

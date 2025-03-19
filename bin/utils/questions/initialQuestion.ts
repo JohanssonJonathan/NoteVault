@@ -1,32 +1,13 @@
 import inquirer from 'inquirer';
-import { actions, value } from '../consts.ts';
+import { actions, dbTables, value, arg } from '../consts.ts';
+import { argv } from '../../index.ts';
+import chalk from 'chalk';
 
 export type TInitialQuestionSelection = {
   value: typeof value.list | typeof value.note;
   action: typeof actions.read | typeof actions.delete | typeof actions.write;
 };
 
-const firstListChoices = [
-  {
-    name: 'I want to write a list',
-    value: { value: value.list, action: actions.write },
-  },
-  {
-    name: 'Show me my list',
-    value: { value: value.list, action: actions.read },
-  },
-];
-
-const firstNoteChoices = [
-  {
-    name: 'I want to write a note',
-    value: { value: value.note, action: actions.write },
-  },
-  {
-    name: 'Show me my notes',
-    value: { value: value.note, action: actions.read },
-  },
-];
 const firstChoices = [
   {
     name: 'I want to write a note or a list',
@@ -36,107 +17,160 @@ const firstChoices = [
     name: 'Show me my notes/list',
     value: { value: null, action: actions.read },
   },
+  {
+    name: 'Delete a note/list',
+    value: { value: null, action: actions.delete },
+  },
 ];
 
 const writeChoices = [
   {
     name: 'I want to write a list',
-    value: { value: value.list, action: actions.write },
+    value: { value: dbTables.listCollection, action: actions.write },
   },
   {
     name: 'I just feel like writing a note',
-    value: { value: value.note, action: actions.write },
+    value: { value: dbTables.noteCollection, action: actions.write },
   },
 ];
 
 const readChoices = [
   {
     name: 'I want to see my lists',
-    value: { value: value.list, action: actions.read },
+    value: { value: dbTables.listCollection, action: actions.read },
   },
   {
     name: 'I want to see my notes',
-    value: { value: value.note, action: actions.read },
+    value: { value: dbTables.noteCollection, action: actions.read },
   },
 ];
 
-export const inititalQuestion = async (
-  argv: {
-    write?: boolean;
-    read?: boolean;
-    delete?: boolean;
-    list?: boolean;
-    note?: boolean;
+const deleteChoices = [
+  {
+    name: 'Delete a list',
+    value: { value: dbTables.listCollection, action: actions.delete },
   },
-  user?: string
-) => {
-  const preSelectedRead = argv['read'];
-  const preSelectedWrite = argv['write'];
-  const preSelectedDelete = argv['delete'];
-  const preSelectedList = argv['list'];
-  const preSelectedNote = argv['note'];
+  {
+    name: 'Delete a note',
+    value: { value: dbTables.noteCollection, action: actions.delete },
+  },
+];
 
-  if (preSelectedList || preSelectedNote) {
-    if (preSelectedRead || preSelectedWrite) {
-      return {
-        value: preSelectedList ? value.list : value.note,
-        action: preSelectedRead ? actions.read : actions.write,
-      };
+const selectedListChoices = [
+  {
+    name: 'Write a list',
+    value: { value: dbTables.listCollection, action: actions.write },
+  },
+  {
+    name: 'Look at your lists',
+    value: { value: dbTables.listCollection, action: actions.read },
+  },
+  {
+    name: 'I want to delete something from my list',
+    value: { value: dbTables.listCollection, action: actions.delete },
+  },
+];
+
+export const inititalQuestion = async (user?: string) => {
+  const selectedArea = argv[arg.area];
+  const selectedCollection = argv[arg.collection];
+  const selectedAction = argv[arg.action];
+
+  // Area is selected
+  if (selectedArea === 'list' || selectedArea === 'note') {
+    if (!selectedAction) {
+      return inquirer
+        .prompt([
+          {
+            type: 'list',
+            name: 'selections',
+            message: selectedCollection
+              ? `What do you want to do in collection '${selectedCollection}' inside ${selectedArea} area?`
+              : 'You are in your list area',
+            choices: [
+              ...selectedListChoices,
+              new inquirer.Separator(),
+              {
+                name: chalk.red.dim.italic('Quit'),
+                value: { value: 'quit', action: 'quit' },
+              },
+            ],
+            loop: false,
+          },
+        ])
+        .then((answers) => {
+          if (answers.selections.value === 'quit') {
+            return process.exit();
+          }
+          return answers.selections;
+        });
+    }
+
+    if (selectedAction === actions.read) {
+      return { value: dbTables.listCollection, action: actions.read };
+    }
+    if (selectedAction === actions.write) {
+      return { value: dbTables.listCollection, action: actions.write };
+    }
+
+    if (selectedAction === actions.delete) {
+      return { value: dbTables.listCollection, action: actions.delete };
     }
   }
 
-  if (preSelectedRead || preSelectedWrite) {
+  // Action is selected but Area is not
+  if (
+    selectedAction === actions.read ||
+    selectedAction === actions.write ||
+    selectedAction === actions.delete
+  ) {
+    const isWrite = selectedAction === actions.write;
+    const isDelete = selectedAction === actions.delete;
+
+    let listMessage = 'I want to see my lists';
+    let noteMessage = 'I want to see my notes';
+
+    if (isWrite) {
+      listMessage = 'I want to write a list';
+      noteMessage = 'I want to write a note';
+    } else if (isDelete) {
+      listMessage = 'I want to delete inside list';
+      noteMessage = 'I want to delete inside note';
+    }
+
     return inquirer
       .prompt([
         {
           type: 'list',
           name: 'selections',
-          message: `What do you want to ${preSelectedWrite ? 'write' : 'read'}?`,
+          message: `In what area do you want to ${selectedAction}?`,
           choices: [
-            ...(preSelectedWrite ? writeChoices : readChoices),
+            {
+              name: listMessage,
+              value: { value: dbTables.listCollection, action: selectedAction },
+            },
+            {
+              name: noteMessage,
+              value: { value: dbTables.noteCollection, action: selectedAction },
+            },
             new inquirer.Separator(),
             {
-              name: 'Quit',
+              name: chalk.red.dim.italic('Quit'),
               value: { value: 'quit', action: 'quit' },
             },
           ],
           loop: false,
         },
       ])
-      .then((answer) => {
-        if (answer.selections.value === 'quit') {
+      .then((answers) => {
+        if (answers.selections.value === 'quit') {
           return process.exit();
         }
-        return answer.selections;
+        return answers.selections;
       });
   }
 
-  if (preSelectedList || preSelectedNote) {
-    return inquirer
-      .prompt([
-        {
-          type: 'list',
-          name: 'selections',
-          message: `Write or read from your ${preSelectedList ? value.list : value.note}'s`,
-          choices: [
-            ...(preSelectedList ? firstListChoices : firstNoteChoices),
-            new inquirer.Separator(),
-            {
-              name: 'Quit',
-              value: { value: 'quit', action: 'quit' },
-            },
-          ],
-          loop: false,
-        },
-      ])
-      .then((answer) => {
-        if (answer.selections.value === 'quit') {
-          return process.exit();
-        }
-        return answer.selections;
-      });
-  }
-
+  // nothing is selected
   return inquirer
     .prompt([
       {
@@ -147,7 +181,7 @@ export const inititalQuestion = async (
           ...firstChoices,
           new inquirer.Separator(),
           {
-            name: 'Quit',
+            name: chalk.red.dim.italic('Quit'),
             value: { value: 'quit', action: 'quit' },
           },
         ],
@@ -159,10 +193,13 @@ export const inititalQuestion = async (
         return process.exit();
       }
       if (answers.selections.action === actions.write) {
-        return { type: 'write', choices: writeChoices };
+        return { type: actions.write, choices: writeChoices };
       }
 
-      return { type: 'read', choices: readChoices };
+      if (answers.selections.action === actions.delete) {
+        return { type: actions.delete, choices: deleteChoices };
+      }
+      return { type: actions.read, choices: readChoices };
     })
     .then((choices) =>
       inquirer.prompt([
@@ -172,10 +209,9 @@ export const inititalQuestion = async (
           message: `What do you want to ${choices.type}?`,
           choices: [
             ...choices.choices,
-
             new inquirer.Separator(),
             {
-              name: 'Quit',
+              name: chalk.red.dim.italic('Quit'),
               value: { value: 'quit', action: 'quit' },
             },
           ],

@@ -1,5 +1,10 @@
-import type { TTables } from '../../types/types.d.ts';
-import { message, value } from '../consts.ts';
+import type {
+  ICollectionRow,
+  IList,
+  IListItem,
+  TTables,
+} from '../../types/types.d.ts';
+import { dbTables, message } from '../consts.ts';
 import {
   getCollections,
   getLists,
@@ -7,15 +12,30 @@ import {
   getListItems,
   getCollection,
 } from '../dbIntegrations/getData.ts';
+import { errorMessage, successfullMesage } from '../logMessages.ts';
 
 export const getCollectionsHandler = async (
   tableName: TTables,
   ids?: number[]
-) => {
-  return await getCollections(tableName, ids);
-};
-
-export const getListsHandler = async (ids: number[]) => {
+) =>
+  new Promise<ICollectionRow[]>(async (resolve, reject) => {
+    return getCollections(tableName, ids)
+      .then((result) => resolve(result))
+      .catch((err) => reject(err));
+  }).catch(() => {
+    errorMessage('Something went wrong with getting the collections');
+    process.exit();
+  });
+export const getListHandler = (id: number) =>
+  new Promise<IList>((resolve, reject) => {
+    getList(id)
+      .then((result) => resolve(result))
+      .catch(reject);
+  }).catch(() => {
+    errorMessage('Something went wrong with getting the list');
+    process.exit();
+  });
+export const getListsHandler = async (ids?: number[]) => {
   return await getLists(ids);
 };
 
@@ -23,57 +43,67 @@ export const getListItemsHandler = async (ids: number[]) => {
   return await getListItems(ids);
 };
 
-export const getListItemsRelatedToList = async (listId: number) => {
-  const currentList = await getList(listId).then((result) => {
-    if (result === false) {
-      return getList(listId);
+export const getListItemsRelatedToListHandler = (listId: number) =>
+  new Promise<IListItem[]>(async (resolve, reject) => {
+    const currentList = await getList(listId).catch(reject);
+
+    if (currentList && typeof currentList === 'object' && !currentList.items) {
+      return resolve([]);
     }
 
-    return result;
+    if (currentList && typeof currentList === 'object' && currentList.items) {
+      const { items } = currentList;
+      const itemIds: number[] = JSON.parse(items);
+
+      return getListItems(itemIds)
+        .then((result) => resolve(result))
+        .catch((err) => reject(err));
+    }
+
+    reject();
+  }).catch((error: Error) => {
+    if (error.message === message[2]) {
+      errorMessage('list doenst exist');
+    } else {
+      errorMessage('Something went wrong with getting the listItems');
+    }
+    process.exit();
   });
 
-  // the list doesnt exist
-  if (currentList === message[2]) {
-    return message[2];
-  }
+export const getListsRelatedToListCollection = (collectionId: number) =>
+  new Promise<IList[]>(async (resolve, reject) => {
+    const currentCollection = await getCollection(
+      dbTables.listCollection,
+      collectionId
+    ).catch(reject);
 
-  if (currentList && typeof currentList === 'object' && currentList.items) {
-    const { items } = currentList;
-    const itemIds: number[] = JSON.parse(items);
-
-    return await getLists(itemIds);
-  }
-
-  return false;
-};
-
-export const getListsRelatedToListCollection = async (collectionId: number) => {
-  const currentCollection = await getCollection(value.list, collectionId).then(
-    (result) => {
-      if (result === false) {
-        return getCollection(value.list, collectionId);
-      }
-
-      return result;
+    if (
+      currentCollection &&
+      typeof currentCollection === 'object' &&
+      !currentCollection.lists
+    ) {
+      return resolve([]);
     }
-  );
 
-  // the collection doesnt exist
-  if (currentCollection === message[2]) {
-    return message[2];
-  }
+    if (
+      currentCollection &&
+      typeof currentCollection === 'object' &&
+      currentCollection.lists
+    ) {
+      const { lists } = currentCollection;
+      const listIds = JSON.parse(lists);
 
-  if (
-    currentCollection &&
-    typeof currentCollection === 'object' &&
-    currentCollection.lists
-  ) {
-    const { lists } = currentCollection;
-    const listIds = JSON.parse(lists);
+      return await getLists(listIds)
+        .then((result) => resolve(result))
+        .catch((err) => reject(err));
+    }
 
-    console.log('list ids : ', listIds);
-    return await getLists(listIds);
-  }
+    reject();
+  }).catch((error: Error) => {
+    if (error.message === message[2]) {
+      errorMessage('Collection doenst exist');
+    }
+    errorMessage('Something went wrong with getting the lists');
 
-  return false;
-};
+    process.exit();
+  });

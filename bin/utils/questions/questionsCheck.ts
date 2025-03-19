@@ -1,20 +1,14 @@
 import inquirer from 'inquirer';
 import { actions, value } from '../consts.ts';
 import chalk from 'chalk';
+
 export type TInitialQuestionSelection = {
   value: typeof value.list | typeof value.note;
   action: typeof actions.read | typeof actions.write;
 };
 
-const questionSelectRow = async (
-  message: string,
-  choices: any,
-  firstChoices: any = []
-) => {
-  console.log('firstChoices: ', firstChoices);
+const questionsCheck = async (message: string, choices: any) => {
   const currentChoices = [
-    ...firstChoices,
-    firstChoices.length ? new inquirer.Separator() : undefined,
     ...choices,
     new inquirer.Separator(),
     {
@@ -26,7 +20,7 @@ const questionSelectRow = async (
   return inquirer
     .prompt([
       {
-        type: 'list',
+        type: 'checkbox',
         name: 'selections',
         message,
         choices: currentChoices,
@@ -40,4 +34,4 @@ const questionSelectRow = async (
       return answers.selections;
     });
 };
-export default questionSelectRow;
+export default questionsCheck;

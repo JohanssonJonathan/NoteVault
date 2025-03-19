@@ -1,16 +1,21 @@
 import { getPreviousAnswers } from '../../index.ts';
 import { value } from '../consts.ts';
-import { createHandlerItems } from '../handlers/createHandler.ts';
 import inputQuestion from '../questions/inputQuestion.ts';
 import writeListItemsFlow from './writeListItemsFlow.ts';
 import type { ICreatedListItem } from '../dbIntegrations/createItemsInCollectionList.ts';
 import writeNoteItemsFlow from './writeNoteItemsFlow.ts';
 
-const writeItemsFlow = async (listId?: string) => {
+const writeItemsFlow = async ({
+  listId,
+  toggle,
+}: {
+  listId?: number;
+  toggle?: boolean;
+}) => {
   const { tableName, rowName } = getPreviousAnswers();
 
   if (tableName === value.list) {
-    return writeListItemsFlow({ listId }).then((response) => {
+    return writeListItemsFlow({ listId, toggle }).then((response) => {
       const value = response as ICreatedListItem | null;
       if (!value) {
         console.log('Something went wrong with adding the list');
@@ -26,28 +31,30 @@ const writeItemsFlow = async (listId?: string) => {
   }
 
   let note: string;
-  return writeNoteItemsFlow({
-    tableName,
-    rowName: rowName as { id: string; value: string },
-  })
-    .then((answer) => {
-      note = answer as string;
-      return inputQuestion({
-        message: 'Choose between the options',
-        validate: true,
-      });
+  return (
+    writeNoteItemsFlow({
+      tableName,
+      rowName: rowName as unknown as { id: string; value: string },
     })
-    .then((answer) =>
-      createHandlerItems({
-        note: { note: note, title: answer },
-        rowName: rowName as { id: string; value: string },
+      .then((answer) => {
+        note = answer as string;
+        return inputQuestion({
+          message: 'Choose between the options',
+          validate: true,
+        });
       })
-    )
-    .then((answer) => {
-      console.log('created: ', answer);
+      // .then((answer) =>
+      //   // createHandlerItems({
+      //   //   note: { note: note, title: answer },
+      //   //   rowName: rowName as { id: string; value: string },
+      //   // })
+      // )
+      .then((answer) => {
+        console.log('created: ', answer);
 
-      process.exit();
-    });
+        process.exit();
+      })
+  );
 };
 
 export default writeItemsFlow;
