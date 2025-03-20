@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
-import { actions, dbTables, value, arg } from '../consts.ts';
-import { argv } from '../../index.ts';
+import { actions, dbTables, value } from '../consts.ts';
 import chalk from 'chalk';
+import { getPreviousArguments } from '../../index.ts';
 
 export type TInitialQuestionSelection = {
   value: typeof value.list | typeof value.note;
@@ -72,10 +72,13 @@ const selectedListChoices = [
 ];
 
 export const inititalQuestion = async (user?: string) => {
-  const selectedArea = argv[arg.area];
-  const selectedCollection = argv[arg.collection];
-  const selectedAction = argv[arg.action];
+  const {
+    area: selectedArea,
+    action: selectedAction,
+    collection: selectedCollection,
+  } = getPreviousArguments();
 
+  console.log('area: ', selectedArea);
   // Area is selected
   if (selectedArea === 'list' || selectedArea === 'note') {
     if (!selectedAction) {

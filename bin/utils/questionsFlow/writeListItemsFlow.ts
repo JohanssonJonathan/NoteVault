@@ -2,9 +2,8 @@ import inputQuestion from '../questions/inputQuestion.ts';
 import confirmQuestion from '../questions/confirmQuestion.ts';
 import { questions } from '../consts.ts';
 import { getPreviousAnswers } from '../../index.ts';
-import { questionSelectRow } from '../questionSelectRow.ts';
 import { createListItemsHandler } from '../handlers/createHandler.ts';
-import type { IListItem } from '../../types/types.d.ts';
+import type { IList, IListItem } from '../../types/types.d.ts';
 
 interface IWriteListItemsFlow {
   items?: Omit<IListItem, 'id'>[];
@@ -16,15 +15,11 @@ const writeListItemsFlow = async ({
   items = [],
   listId,
   toggle,
-}: IWriteListItemsFlow): Promise<
-  | ReturnType<typeof inputQuestion>
-  | {
-      id: string;
-      created: Date;
-      items?: { id: string; name: string }[];
-    }
-  | null
-> => {
+}: IWriteListItemsFlow): Promise<// | ReturnType<typeof inputQuestion>
+{
+  list: IList;
+  items: IListItem[];
+}> => {
   return inputQuestion({
     message: questions()[items.length ? 6 : 5],
     validate: items.length === 0,
@@ -46,13 +41,13 @@ const writeListItemsFlow = async ({
             name,
             link,
             created: Date.now(),
-            isDone: toggle ? false : undefined,
+            isDone: toggle ? 0 : undefined,
           };
         }
         return {
           name,
           created: Date.now(),
-          isDone: toggle ? false : undefined,
+          isDone: toggle ? 0 : undefined,
         };
       });
     })
@@ -87,16 +82,9 @@ const writeListItemsFlow = async ({
                 created: item.created,
                 link: item.link || undefined,
                 isDone:
-                  typeof item.isDone === 'boolean' ? item.isDone : undefined,
+                  typeof item.isDone === 'number' ? item.isDone : undefined,
               }))
             );
-            // return createHandlerItems({
-            //   items,
-            //   rowName: rowName as { id: string; value: string },
-            //   id: listId,
-            // }).then((answer) => {
-            //   return answer;
-            // });
           }
 
           return writeListItemsFlow({ items });

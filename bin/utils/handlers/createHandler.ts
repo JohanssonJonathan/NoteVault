@@ -24,7 +24,7 @@ export const createListItemsHandler = async (
   listId: number,
   items: Omit<IListItem, 'id'>[]
 ) =>
-  new Promise(async (resolve, reject) => {
+  new Promise<{ list: IList; items: IListItem[] }>(async (resolve, reject) => {
     await getListExcistenceById(listId).catch(reject);
     // first create the items
     const createdItems = await createListItems(items).catch(reject);

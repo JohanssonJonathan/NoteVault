@@ -1,15 +1,15 @@
 import type { ICollectionRow } from '../../types/types.d.ts';
 import questionSelectRow from '../questions/questionSelectRow.ts';
-import { getPreviousAnswers, updatePreviousAnswers } from '../../index.ts';
-import { argv } from '../../index.ts';
-import { actions, arg } from '../consts.ts';
+import { getPreviousAnswers } from '../../index.ts';
+import { actions } from '../consts.ts';
 import confirmQuestion from '../questions/confirmQuestion.ts';
 import chalk from 'chalk';
+import { getPreviousArguments } from '../../index.ts';
 
 const pickCollectionFlow = async (data: ICollectionRow[]) => {
   const { action } = getPreviousAnswers();
 
-  const selectedListCollection = argv[arg.collection];
+  const { collection: selectedListCollection } = getPreviousArguments();
 
   if (selectedListCollection) {
     const foundCollection = data.find(

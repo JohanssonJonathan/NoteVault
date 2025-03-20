@@ -84,7 +84,7 @@ const readListsFlow = async (answer: { id: number; value: string }) => {
           // Create a new item inside the same
 
           const isToggling = items.find(
-            (item) => typeof item.isDone === 'boolean'
+            (item) => typeof item.isDone === 'number'
           );
 
           return writeItemsFlow({ toggle: Boolean(isToggling) });

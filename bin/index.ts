@@ -9,7 +9,10 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import sqlite3 from 'sqlite3';
 import { createTableHandler } from './utils/handlers/createHandler.ts';
-import { getCollectionsHandler } from './utils/handlers/getHandler.ts';
+import {
+  getCollectionsHandler,
+  getListItemsRelatedToListHandler,
+} from './utils/handlers/getHandler.ts';
 import writeListsFlow from './utils/questionsFlow/writeListsFlow/index.ts';
 import readListsFlow from './utils/questionsFlow/readListsFlow/index.ts';
 import createNewCollectionFlow from './utils/questionsFlow/createNewCollectionFlow.ts';
@@ -18,6 +21,14 @@ import { deleteListCollectionHandler } from './utils/handlers/deleteHandler.ts';
 import { getListsRelatedToListCollection } from './utils/handlers/getHandler.ts';
 import confirmQuestion from './utils/questions/confirmQuestion.ts';
 import chalk from 'chalk';
+import {
+  deleteListHandler,
+  deleteItemHandler,
+} from './utils/handlers/deleteHandler.ts';
+import { getListHandler } from './utils/handlers/getHandler.ts';
+import { arg } from './utils/consts.ts';
+import { getCollections } from './utils/dbIntegrations/getData.ts';
+
 export const argv = yargs(hideBin(process.argv))
   .options({
     collection: { type: 'string' },
@@ -30,43 +41,105 @@ const user = USER
   ? USER.charAt(0).toUpperCase() + USER.substring(1, USER.length)
   : undefined;
 
-let tableName: TTables;
+let tableName: TTables | undefined;
 let rowName: { id?: number; value?: string } = {};
-let list: IList;
-let listItem: IListItem;
-let action: typeof actions.read | typeof actions.delete | typeof actions.write;
+let list: IList | undefined;
+let listItems: IListItem[] | undefined;
+let action:
+  | typeof actions.read
+  | typeof actions.delete
+  | typeof actions.write
+  | undefined;
 
+let programArguments = {
+  area: argv[arg.area],
+  collection: argv[arg.collection],
+  list: argv[arg.list],
+  action: argv[arg.action],
+};
+
+export const getPreviousArguments = () => ({
+  area: programArguments.area,
+  collection: programArguments.collection,
+  list: programArguments.list,
+  action: programArguments.action,
+});
+
+export const updateArguments = ({
+  area,
+  collection,
+  list,
+  action,
+}: {
+  area?: string;
+  collection?: string;
+  list?: string;
+  action?: string;
+}) => {
+  programArguments = {
+    area,
+    collection,
+    list,
+    action,
+  };
+};
 
 export const getPreviousAnswers = () => {
   return {
     tableName,
     rowName,
     list,
-    listItem,
+    listItems,
     action,
   };
+};
+
+export const clearAnswers = ({
+  tableName: isTableClear,
+  rowName: isRowClear,
+  list: isListClear,
+  listItems: isItemsClear,
+  action: isActionClear,
+}: {
+  tableName?: true;
+  rowName?: true;
+  list?: true;
+  listItems?: true;
+  action?: true;
+}) => {
+  tableName = isTableClear ? undefined : tableName;
+  rowName = isRowClear ? {} : rowName;
+  list = isListClear ? undefined : list;
+  listItems = isItemsClear ? undefined : listItems;
+  action = isActionClear ? undefined : action;
 };
 
 export const updatePreviousAnswers = ({
   tableName: newTableName,
   rowName: newRowName,
   list: newList,
-  listItem: newListItem,
+  listItems: newListItems,
   action: newAction,
 }: {
   tableName?: TTables;
   rowName?: { id?: number; value?: string };
   list?: IList;
-  listItem?: IListItem;
+  listItems?: IListItem[];
   action?: typeof actions.read | typeof actions.delete | typeof actions.write;
 }) => {
   tableName = newTableName || tableName;
   rowName = newRowName || rowName;
   list = newList || list;
-  listItem = newListItem || listItem;
+  listItems = newListItems || listItems;
   action = newAction || action;
 };
 
+export interface IArguments {
+  area?: string;
+  collection?: string;
+  list?: string;
+  action?: string;
+}
 const startQuestions = () =>
   inititalQuestion(user)
     .then(async (answer) => {
@@ -113,35 +186,106 @@ const startQuestions = () =>
               name: `No I want to delete someting inside '${answer.value}' collection`,
               value: { value: answer.value },
             },
-          ]).then(async (answer) => {
-            if (answer.action === actions.delete) {
-              return deleteListCollectionHandler(rowName.id as number);
-            }
+          ])
+            .then(async (answer) => {
+              if (answer.action === actions.delete) {
+                return deleteListCollectionHandler(rowName.id as number).then(
+                  async () => {
+                    const collections = await getCollectionsHandler(
+                      dbTables.listCollection
+                    );
+                    clearAnswers({ rowName: true });
+                    updateArguments({
+                      area: 'list',
+                      action:
+                        collections.length > 0 ? actions.delete : undefined,
+                    });
+                    startQuestions();
+                  }
+                );
+              }
 
-            const lists = await getListsRelatedToListCollection(
-              rowName.id as number
-            );
+              const lists = await getListsRelatedToListCollection(
+                rowName.id as number
+              );
 
-            if (lists.length === 0) {
+              if (lists.length === 0) {
+                return confirmQuestion(
+                  chalk.red(
+                    `There are no lists inside ${rowName.value}. Do you want to delete the collection anyway?`
+                  )
+                ).then(async (answer) => {
+                  if (answer) {
+                    return deleteListCollectionHandler(rowName.id as number);
+                  }
+                  process.exit();
+                });
+              }
+
+              // Delete list
+              const choices = lists.map((list) => ({
+                name: list.name,
+                value: { id: list.id, value: list.name },
+              }));
+
+              return questionSelectRow('Pick list', choices);
+            })
+            .then(async (answer) => {
+              if (answer === undefined) return;
+              const list = await getListHandler(answer.id);
+              const items = await getListItemsRelatedToListHandler(list.id);
+
+              updatePreviousAnswers({ list, listItems: items });
+
+              if (items.length === 0) {
+                return confirmQuestion(`Delete ${answer.value} list?`);
+              }
+
+              return questionSelectRow(`Delete ${answer.value} list?`, [
+                {
+                  name: 'Yes!',
+                  value: true,
+                },
+                {
+                  name: `No I want to delete someting inside '${answer.value}' list`,
+                  value: false,
+                },
+              ]);
+            })
+            .then(async (answer) => {
+              if (answer === undefined) return;
+
+              const { list, listItems } = getPreviousAnswers();
+              if (answer) {
+                return deleteListHandler(rowName.id as number, list.id);
+              }
+
+              if (listItems.length === 0) {
+                process.exit();
+              }
+
+              const choices = listItems.map((item) => ({
+                name: item.name,
+                value: { id: item.id, value: item.name },
+              }));
+
+              return questionSelectRow(`Delete an item in ${list.name}`, [
+                ...choices,
+              ]);
+            })
+            .then(async (answer) => {
+              if (answer === undefined) return;
+
               return confirmQuestion(
-                chalk.red(
-                  `There are no lists inside ${rowName.value}. Do you want to delete the collection anyway?`
-                )
-              ).then(async (answer) => {
-                if (answer) {
-                  return deleteListCollectionHandler(rowName.id as number);
+                `Are you sure you want to delete ${answer.value}?`
+              ).then((confirm) => {
+                if (confirm) {
+                  return deleteItemHandler(list.id, answer.id);
                 }
+
                 process.exit();
               });
-            }
-
-            // Delete list
-            const choices = lists.map((list) => ({
-              name: list.name,
-              value: { id: list.id, value: list.name },
-            }));
-            return questionSelectRow('What do you want to delete?', choices);
-          });
+            });
         }
       });
     });

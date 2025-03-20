@@ -15,20 +15,35 @@ const getListsHelper = (ids: number[]): Promise<IList | false> =>
     .catch((err) => err);
 
 // Delete one item from a list
-export const deleteItemHandler = async (listId: number, itemId: number) => {
-  const listContent = await getList(listId).catch(() => false);
+export const deleteItemHandler = async (listId: number, itemId: number) =>
+  new Promise(async (resolve, reject) => {
+    const listContent = await getList(listId).catch(reject);
 
-  if (!listContent || typeof listContent === 'boolean') return listContent;
+    const itemIds = listContent?.items ? JSON.parse(listContent.items) : [];
 
-  const itemIds = listContent.items ? JSON.parse(listContent.items) : [];
+    if (itemIds.length === 0) {
+      return reject();
+    }
 
-  if (itemIds.length === 0) {
-    return false;
-  }
+    const itemsIdsAsString = listContent?.items as string;
 
-  const itemsIdsAsString = listContent.items as string;
-  return deleteItem({ id: listId, items: itemsIdsAsString }, itemId);
-};
+    console.log('listId: ', listId);
+    console.log('itemIdsAsString: ', itemsIdsAsString);
+    console.log('itemId: ', itemId);
+
+    return deleteItem({ id: listId, items: itemsIdsAsString }, itemId)
+      .then(resolve)
+      .catch(reject);
+  })
+    .then((result) => {
+      successfullMesage('Deleted item');
+      return result;
+    })
+    .catch((error) => {
+      console.log('Trying to delete item');
+      console.log(`Error: ${error}`);
+      process.exit();
+    });
 
 // Delete all items from a list
 export const deleteItemsHandler = async (listId: number) => {
@@ -47,33 +62,35 @@ export const deleteItemsHandler = async (listId: number) => {
 };
 
 // Delete a list and all its items
-export const deleteListHandler = async (
-  collectionId: number,
-  listId: number
-) => {
-  const currentCollection = await getCollection(
-    dbTables.listCollection,
-    collectionId
-  );
+export const deleteListHandler = async (collectionId: number, listId: number) =>
+  new Promise(async (resolve, reject) => {
+    const currentCollection = await getCollection(
+      dbTables.listCollection,
+      collectionId
+    ).catch(reject);
 
-  if (typeof currentCollection === 'string') {
-    return message[2];
-  }
+    if (!currentCollection || !currentCollection.lists) return reject();
 
-  if (!currentCollection || !currentCollection.lists) return currentCollection;
+    const listContent = await getList(listId).catch(reject);
 
-  const listContent = await getList(listId).catch((err) => err);
+    const itemIds = listContent?.items ? JSON.parse(listContent.items) : [];
 
-  if (!listContent) return listContent;
-
-  const itemIds = listContent.items ? JSON.parse(listContent.items) : [];
-
-  return deleteList(
-    { id: collectionId, lists: currentCollection.lists },
-    listId,
-    itemIds
-  ).catch((result) => result);
-};
+    return deleteList(
+      { id: collectionId, lists: currentCollection.lists },
+      listId,
+      itemIds
+    )
+      .then(resolve)
+      .catch(reject);
+  })
+    .then((result) => {
+      successfullMesage('Deleted successfully');
+      return result;
+    })
+    .catch(() => {
+      errorMessage('Something went wrong with deleting the list');
+      process.exit();
+    });
 
 // needs to delete list collection an everything related to it.
 export const deleteListCollectionHandler = async (id: number) =>

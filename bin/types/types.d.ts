@@ -15,7 +15,7 @@ interface IListItem {
   created: number;
   modified?: number;
   link?: string;
-  isDone?: boolean;
+  isDone?: number;
 }
 
 interface IList {

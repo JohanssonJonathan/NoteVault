@@ -1,6 +1,6 @@
 import { dbTables } from '../consts.ts';
 import { db } from '../../index.ts';
-import type { ICollectionRow } from '../../types/types.d.ts';
+import type { ICollectionRow, IList } from '../../types/types.d.ts';
 
 export const updateCollectionName = (collectionId: number, name: string) =>
   new Promise((resolve, reject) => {
@@ -35,7 +35,7 @@ export const updateListName = (collectionId: number, name: string) =>
   });
 
 export const updateList = (listId: number, itemIds: number[]) =>
-  new Promise((resolve, reject) => {
+  new Promise<IList>((resolve, reject) => {
     const firstSql = `
 SELECT items
 FROM ${dbTables.lists}
@@ -60,7 +60,7 @@ WHERE id = ${listId};
      WHERE id = ${listId}
      RETURNING *;
     `;
-      db.get(updateSql, [], (err, row) => {
+      db.get(updateSql, [], (err, row: IList) => {
         if (err) return reject(false);
 
         resolve(row);

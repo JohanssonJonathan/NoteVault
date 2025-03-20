@@ -11,7 +11,6 @@ const questionSelectRow = async (
   choices: any,
   firstChoices: any = []
 ) => {
-  console.log('firstChoices: ', firstChoices);
   const currentChoices = [
     ...firstChoices,
     firstChoices.length ? new inquirer.Separator() : undefined,

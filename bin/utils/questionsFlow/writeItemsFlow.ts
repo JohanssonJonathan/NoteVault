@@ -2,8 +2,8 @@ import { getPreviousAnswers } from '../../index.ts';
 import { value } from '../consts.ts';
 import inputQuestion from '../questions/inputQuestion.ts';
 import writeListItemsFlow from './writeListItemsFlow.ts';
-import type { ICreatedListItem } from '../dbIntegrations/createItemsInCollectionList.ts';
 import writeNoteItemsFlow from './writeNoteItemsFlow.ts';
+import { getListItemsRelatedToListHandler } from '../handlers/getHandler.ts';
 
 const writeItemsFlow = async ({
   listId,
@@ -15,17 +15,36 @@ const writeItemsFlow = async ({
   const { tableName, rowName } = getPreviousAnswers();
 
   if (tableName === value.list) {
-    return writeListItemsFlow({ listId, toggle }).then((response) => {
-      const value = response as ICreatedListItem | null;
-      if (!value) {
-        console.log('Something went wrong with adding the list');
-        return null;
+    return writeListItemsFlow({ listId, toggle }).then(async (response) => {
+      const items = await getListItemsRelatedToListHandler(response.list.id);
+      const isToggle = items.find((item) => typeof item.isDone === 'number');
+      console.log('Collection: ', rowName.value);
+      console.log('_______________________');
+      console.log('');
+      console.log(`List: ${response.list.name}`);
+      console.log('_______________________');
+      console.log('');
+      console.log('Created at: ', response.list.created);
+      console.log('_______________________');
+      console.log('');
+      if (response.list.modified) {
+        console.log('Modified at: ', response.list.modified);
       }
 
-      console.log('Created list successfully!');
-      console.log('Title: ', rowName.value);
-      value.items?.map(({ name }) => console.log(`* ${name}`));
+      console.log('');
+      items.forEach((item) => {
+        console.log('_______________________');
+        console.log('');
+        console.log(`* ${item.name}`);
 
+        if (isToggle) {
+          console.log('Is done: ', Boolean(item.isDone));
+        }
+
+        if (item.link) {
+          console.log('Link: ', item.link);
+        }
+      });
       return true;
     });
   }

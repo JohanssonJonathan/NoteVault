@@ -64,8 +64,7 @@ export const createListItems = (items: Omit<IListItem, 'id'>[]) =>
     const currentValues = items
       .map((item) => {
         const link = item.link ? `"${item.link}"` : null;
-        const isDone =
-          typeof item.isDone === 'boolean' ? Number(item.isDone) : null;
+        const isDone = typeof item.isDone === 'number' ? item.isDone : null;
         const baseValues = `"${item.name}", "${item.created}", ${link}, ${isDone}`;
 
         return `(${baseValues})`;

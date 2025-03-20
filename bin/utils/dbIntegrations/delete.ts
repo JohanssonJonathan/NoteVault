@@ -42,7 +42,7 @@ const updateParentReference = (
 
   const updateSql = `
     UPDATE ${table}
-    SET lists = ${newValue}
+    SET ${table === dbTables.listCollection ? 'lists' : 'items'} = ${newValue}
     WHERE id = ${id}
     `;
 
@@ -170,7 +170,7 @@ export const deleteItem = (
     combineQueries(
       () => {
         deleteById(itemToRemove, dbTables.listItems, (err) => {
-          if (err) return reject(err);
+          if (err) return reject('Cant delete by id');
         });
 
         const currentItems = JSON.parse(list.items as string);
@@ -179,7 +179,8 @@ export const deleteItem = (
         );
 
         updateParentReference(list.id, dbTables.lists, updatedItems, (err) => {
-          if (err) return reject(false);
+          console.log('err: ', err);
+          if (err) return reject('Cant update parent reference with new items');
         });
       },
       (err) => {
