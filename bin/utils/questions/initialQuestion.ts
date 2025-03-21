@@ -78,7 +78,6 @@ export const inititalQuestion = async (user?: string) => {
     collection: selectedCollection,
   } = getPreviousArguments();
 
-  console.log('area: ', selectedArea);
   // Area is selected
   if (selectedArea === 'list' || selectedArea === 'note') {
     if (!selectedAction) {

@@ -6,6 +6,7 @@ import type {
   IList,
 } from '../../types/types.d.ts';
 import { message, dbTables } from '../consts.ts';
+import { combineQueries } from './dbUtils.ts';
 
 export const getTableExistence = (tableName: string) =>
   new Promise((resolve) => {
@@ -58,6 +59,35 @@ WHERE id = '${id}';
       return resolve(message[2]);
     });
   });
+
+export const getListExistenceRelatedToCollectionByName = (
+  collectionId: number,
+  listName: string
+) =>
+  new Promise((resolve, reject) => {
+    combineQueries(
+      () => {},
+      (err) => {
+        if (err) return reject(false);
+
+        resolve(true);
+      }
+    );
+    const sql = `SELECT * FROM ${dbTables.lists}
+WHERE name = '${name}';
+    `;
+
+    db.get(sql, [], (err, row) => {
+      if (err) return reject(false);
+
+      if (row) {
+        return resolve(message[1]);
+      }
+
+      return resolve(undefined);
+    });
+  });
+
 export const getCollectionExistenceByName = (tableName: string, name: string) =>
   new Promise((resolve, reject) => {
     const sql = `SELECT * FROM ${tableName}

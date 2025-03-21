@@ -1,4 +1,4 @@
-import { dbTables } from '../consts.ts';
+import { actions, dbTables } from '../consts.ts';
 import type { ICollectionRow } from '../../types/types.d.ts';
 import confirmQuestion from '../questions/confirmQuestion.ts';
 import inputQuestion from '../questions/inputQuestion.ts';
@@ -8,6 +8,7 @@ import {
   createCollectionHandler,
 } from '../handlers/createHandler.ts';
 import writeItemsFlow from './writeItemsFlow.ts';
+import { clearAnswers, startQuestions, updateArguments } from '../../index.ts';
 
 const createNewCollectionFlow = async () => {
   // Create a new collection
@@ -23,10 +24,10 @@ const createNewCollectionFlow = async () => {
         `Do you want to create your first list inside ${data.name} collection`
       );
     })
-    .then(async (answer) => {
+    .then(async (confirm) => {
       const { rowName } = getPreviousAnswers();
 
-      if (answer) {
+      if (confirm) {
         return inputQuestion({
           message: 'Write a name for your list',
           validate: true,
@@ -41,10 +42,25 @@ const createNewCollectionFlow = async () => {
           })
           .then((answer) => {
             return writeItemsFlow({ toggle: answer });
+          })
+          .then(() => {
+            const { list } = getPreviousAnswers();
+            updateArguments({
+              area: 'list',
+              collection: rowName.value,
+              list: list?.name,
+              action: actions.write,
+            });
+            startQuestions();
           });
       }
 
-      process.exit();
+      clearAnswers({ rowName: true });
+      updateArguments({
+        area: 'list',
+        action: actions.write,
+      });
+      startQuestions();
     });
 };
 export default createNewCollectionFlow;

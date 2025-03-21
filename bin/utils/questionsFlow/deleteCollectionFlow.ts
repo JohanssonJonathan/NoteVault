@@ -1,74 +1,76 @@
-// import type { TTables } from '../../types/types.d.ts';
-// import { deleteHandlerCollection } from '../handlers/deleteHandler.ts';
+import {
+  clearAnswers,
+  updateArguments,
+  startQuestions,
+  getPreviousAnswers,
+} from '../../index.ts';
+import questionSelectRow from '../questions/questionSelectRow.ts';
+import { deleteListCollectionHandler } from '../handlers/deleteHandler.ts';
+import { getCollectionsHandler } from '../handlers/getHandler.ts';
+import { dbTables, actions } from '../consts.ts';
 import confirmQuestion from '../questions/confirmQuestion.ts';
-// import questionSelectRow from '../questions/questionSelectRow.ts';
-// import { questions } from '../consts.ts';
-import { getPreviousAnswers } from '../../index.ts';
 
-// interface IDeleteCollectionFlow {
-//   tableName: TTables;
-//   rowName: { id: string; value: string };
-// }
+const deleteCollectionFlow = async (answer) => {
+  const { rowName, lists } = getPreviousAnswers();
 
-export const deleteCollectionFlow = async () => {
-  const { rowName, tableName } = getPreviousAnswers();
-  return (
-    confirmQuestion({
-      message: `Are you sure you want to delete ${rowName.value} in ${tableName}?`,
-    })
-      // .then((answer) => {
-      //   if (answer) {
-      //     // return deleteHandlerCollection({
-      //     //   tableName,
-      //     //   rowId: rowName.id as string,
-      //     // });
-      //   }
-      // })
-      .then((data) => {
-        if (!data) {
-          console.log('Something went wrong with deleting the collection');
-        } else {
-          console.log(`Deleted ${rowName.value} in ${tableName} successfully!`);
+  // There are no lists inside the collection. Only ask if user wants delete.
+  if (lists?.length === 0) {
+    return confirmQuestion(`Delete ${answer.value} collection?`).then(
+      (confirm) => {
+        if (confirm) {
+          return deleteListCollectionHandler(rowName.id as number).then(
+            async () => {
+              const collections = await getCollectionsHandler(
+                dbTables.listCollection
+              );
+              clearAnswers({ rowName: true });
+              updateArguments({
+                area: 'list',
+                action: collections.length > 0 ? actions.delete : undefined,
+              });
+              startQuestions();
+            }
+          );
         }
 
-        return;
-      })
-  );
+        clearAnswers({ rowName: true });
+        updateArguments({
+          area: 'list',
+          action: actions.delete,
+        });
+        startQuestions();
+      }
+    );
+  }
+  // Lists exist inside collection. Ask possibitlity to delete something inside the collection.
+  return questionSelectRow(`Delete ${answer.value} collection?`, [
+    {
+      name: 'Yes!',
+      value: true,
+    },
+    {
+      name: `No I want to delete someting inside '${answer.value}' collection`,
+      value: false,
+    },
+  ]).then(async (answer) => {
+    if (answer) {
+      return deleteListCollectionHandler(rowName.id as number).then(
+        async () => {
+          const collections = await getCollectionsHandler(
+            dbTables.listCollection
+          );
+          clearAnswers({ rowName: true });
+          updateArguments({
+            area: 'list',
+            action: collections.length > 0 ? actions.delete : undefined,
+          });
+          startQuestions();
+        }
+      );
+    }
+
+    return 'delete lists';
+  });
 };
 
-// export const deleteListFlow = async ({
-//   data,
-//   tableName,
-// }: IDeleteCollectionFlow) => {
-//   let rowName: { id?: string; value?: string } = {};
-//   const choices = data.map(({ id, name }) => ({
-//     name,
-//     value: { id, value: name },
-//   }));
-//
-//   return questionSelectRow({ choices, message: questions[0] }).then(
-//     async (answer) => {
-//       rowName.id = answer.id;
-//       rowName.value = answer.value;
-//
-//       return confirmQuestion({
-//         tableName,
-//         rowName: rowName.value,
-//         question: 4,
-//       })
-//         .then((confirm) => {
-//           if (confirm) {
-//             return deleteHandlerCollection({
-//               tableName,
-//               rowId: rowName.id as string,
-//             });
-//           }
-//
-//           process.exit();
-//         })
-//         .then((data) => data);
-//     }
-//   );
-// };
-//
-export const deleteNoteFlow = () => {};
+export default deleteCollectionFlow;
